@@ -30,6 +30,5 @@ namespace RemoteControlPCBot
                 return null;
             }
         }
-
     }
 }

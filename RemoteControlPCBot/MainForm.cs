@@ -1,19 +1,13 @@
-﻿using System;
-using System.Collections;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.Win32;
-using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Args;
 using Telegram.Bot.Types.InputFiles;
@@ -21,13 +15,12 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace RemoteControlPCBot
 {
-    
+
 
     public partial class MainForm : Form
     {
         private List<BotCommandClass> commands = new List<BotCommandClass>();
         TelegramBotClient botClient;
-        private const string offsetFile = "offset.txt";
         private const long AdminId = 510746823;
         private const string Token = "1102558395:AAELDQQJbmF4bHFDo4dUPa2sdZoqZg2CLyk";
         private const string LogPath = "log";
@@ -187,12 +180,6 @@ namespace RemoteControlPCBot
                 );
 
 
-
-
-
-
-
-
             WebProxy proxy = new WebProxy("46.171.2.211", 3128);
             botClient = new TelegramBotClient(Token,proxy);
 
@@ -261,7 +248,6 @@ namespace RemoteControlPCBot
                    this.ShowInTaskbar = false;
                    this.Log_Icon.Visible = true;
                }));
-
             }
         }
 
@@ -276,7 +262,6 @@ namespace RemoteControlPCBot
                     this.WindowState = FormWindowState.Normal;
                 }
                 ));
-
             }
         }
 
