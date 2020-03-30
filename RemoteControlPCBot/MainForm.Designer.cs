@@ -31,7 +31,7 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.textBoxLog = new System.Windows.Forms.TextBox();
-            this.Лог = new System.Windows.Forms.NotifyIcon(this.components);
+            this.Log_Icon = new System.Windows.Forms.NotifyIcon(this.components);
             this.SuspendLayout();
             // 
             // textBoxLog
@@ -45,22 +45,22 @@
             this.textBoxLog.Name = "textBoxLog";
             this.textBoxLog.ReadOnly = true;
             this.textBoxLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textBoxLog.Size = new System.Drawing.Size(1924, 447);
+            this.textBoxLog.Size = new System.Drawing.Size(684, 461);
             this.textBoxLog.TabIndex = 0;
             this.textBoxLog.TabStop = false;
             // 
-            // Лог
+            // Log_Icon
             // 
-            this.Лог.Icon = ((System.Drawing.Icon)(resources.GetObject("Лог.Icon")));
-            this.Лог.Text = "Лог";
-            this.Лог.Visible = true;
-            this.Лог.DoubleClick += new System.EventHandler(this.notifyIcon1_DoubleClick);
+            this.Log_Icon.Icon = ((System.Drawing.Icon)(resources.GetObject("Log_Icon.Icon")));
+            this.Log_Icon.Text = "Лог";
+            this.Log_Icon.Visible = true;
+            this.Log_Icon.DoubleClick += new System.EventHandler(this.notifyIcon1_DoubleClick);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1924, 447);
+            this.ClientSize = new System.Drawing.Size(684, 461);
             this.Controls.Add(this.textBoxLog);
             this.Font = new System.Drawing.Font("Lucida Console", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -79,7 +79,7 @@
         #endregion
 
         private System.Windows.Forms.TextBox textBoxLog;
-        private System.Windows.Forms.NotifyIcon Лог;
+        private System.Windows.Forms.NotifyIcon Log_Icon;
     }
 }
 

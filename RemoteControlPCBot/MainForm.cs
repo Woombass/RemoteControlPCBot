@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Args;
@@ -26,6 +27,7 @@ namespace RemoteControlPCBot
     {
         private List<BotCommandClass> commands = new List<BotCommandClass>();
         TelegramBotClient botClient;
+        private const string offsetFile = "offset.txt";
         private const long AdminId = 510746823;
         private const string Token = "1102558395:AAELDQQJbmF4bHFDo4dUPa2sdZoqZg2CLyk";
         private const string LogPath = "log";
@@ -43,6 +45,15 @@ namespace RemoteControlPCBot
 
         private async void Init()
         {
+            string name = "RemoteControlPCBot";
+            string ExePath =Application.ExecutablePath;
+            RegistryKey reg;
+            reg = Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Run\\");
+            reg.SetValue(name, ExePath);
+            reg.Close();
+
+
+
             commands.Add
                 (
                     new BotCommandClass 
@@ -58,10 +69,11 @@ namespace RemoteControlPCBot
                             + string.Join("\n", commands.Select(s => s.Example)));
                             KeyboardButton key1 = new KeyboardButton("/getScreen");
                             KeyboardButton key2 = new KeyboardButton("/reboot");
-                            KeyboardButton key3 = new KeyboardButton("/turnOffBot");
+                            KeyboardButton key3 = new KeyboardButton("/hideBot");
+                            KeyboardButton key4 = new KeyboardButton("/showBot");
                             KeyboardButton[] keyRow1 = { key1, key2 };
-                            KeyboardButton[] keyRow = { key3 };
-                            KeyboardButton[][] buttons = { keyRow, keyRow1 };
+                            KeyboardButton[] keyRow2 = { key3, key4 };
+                            KeyboardButton[][] buttons = { keyRow2, keyRow1 };
                             KeyboardButton[] keys = {  new KeyboardButton("/getScreen") ,  new KeyboardButton("/help") ,  new KeyboardButton("/off")  };
                             keyboard = new ReplyKeyboardMarkup(buttons,oneTimeKeyboard: true);
                             await botClient.SendTextMessageAsync(update.Message.Chat.Id, replyMarkup: keyboard,text: "Выбор действия:" );
@@ -108,9 +120,10 @@ namespace RemoteControlPCBot
                         Excecute = async (model, update) => 
                         {
                             var time = DateTime.Parse(model.Args.FirstOrDefault());
-                            DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0,0);
-                            TimeSpan seconds = time - origin;
-                            Process.Start("shutdown", $"/s /t {seconds.TotalSeconds}");
+                            TimeSpan seconds = time - DateTime.Now;
+                            var finalTime = Math.Floor(seconds.TotalSeconds);
+                            Process.Start("cmd.exe", "/c shutdown -s -t " +finalTime);
+                            //Process.Start("shutdown", $"/s /t {seconds.TotalSeconds}");
                             await botClient.SendTextMessageAsync(update.Message.Chat.Id, "Компьютер будет выключен в указанное время.");
                             WriteLog($"Выключение компьютера в {time}");
                         },
@@ -143,19 +156,39 @@ namespace RemoteControlPCBot
 
             commands.Add
                 (
-                new BotCommandClass
-                {
-                    Command = "/turnOffBot",
-                    Example = "/turnOffBot",
-                    CountArgs = 0,
-                    Excecute = async (model, update) =>
+                    new BotCommandClass
                     {
-                        await botClient.SendTextMessageAsync(update.Message.Chat.Id, "Завершение работы бота.");
-                        WriteLog($"\r\nВыключение бота. Запрос от пользователя: {update.Message.Chat.FirstName} Дата: {DateTime.Now} ");
-                        Application.Exit();
+                        Command = "/hideBot",
+                        Example = "/hideBot",
+                        CountArgs = 0,
+                        Excecute = async (model, update) =>
+                        {
+                            await botClient.SendTextMessageAsync(update.Message.Chat.Id, "Скрытие бота в трей.");
+                            this.Invoke(new Action(() => { this.WindowState = FormWindowState.Minimized; }));
+                            MainForm_Deactivate(this, null);
+                        }
                     }
-                }
                 );
+
+            commands.Add
+                (
+                    new BotCommandClass
+                    {
+                        Command = "/showBot",
+                        Example = "/showBot",
+                        CountArgs = 0,
+                        Excecute = async (model, update) =>
+                        {
+                            await botClient.SendTextMessageAsync(update.Message.Chat.Id, "Отображение окна бота.");
+                            notifyIcon1_DoubleClick(Log_Icon, null);
+
+                        }
+                    }
+                );
+
+
+
+
 
 
 
@@ -167,19 +200,16 @@ namespace RemoteControlPCBot
             var res = botClient.GetMeAsync().Result;
             textBoxLog.Text += res.FirstName + " Бот запущен!" ;
 
-            botClient.OnMessage += BotClient_OnMessage;
+            botClient.OnMessage += BotClient_OnMessage;          
             await botClient.SendTextMessageAsync(AdminId, "Бот запущен на: " + Environment.UserName);
             botClient.StartReceiving();
 
         }
-
         private void WriteLog(string text)
         {
             textBoxLog.Invoke( new Action(() => { textBoxLog.Text += text; }) );
-
             File.AppendAllText(LogPath + DateTime.Today.ToShortDateString()+".txt",text);
         }
-
         private async void BotClient_OnMessage(object sender, MessageEventArgs e)
         {
             if (flag != true)
@@ -190,24 +220,28 @@ namespace RemoteControlPCBot
                     {
                         WriteLog("\r\n" + DateTime.Now + " " + e.Message.Chat.FirstName + "( " + e.Message.Chat.Id + " ): " + e.Message.Text);
                         var model = BotCommandClass.ParseCommand(e.Message.Text);
-                        foreach (var cmd in commands)
+                        if (model == null)
                         {
-                            if (cmd.Command == e.Message.Text)
+                            await botClient.SendTextMessageAsync(e.Message.Chat.Id, "Нет такой команды!");
+                        }
+                        else
+                        {
+                            foreach (var cmd in commands)
                             {
-
-                                if (cmd.CountArgs == model.Args.Length)
+                                if (cmd.Command == model.Command)
                                 {
-                                    cmd.Excecute?.Invoke(model, e);
-                                }
-                                else
-                                {
-                                    cmd.Error?.Invoke(model, e);
-                                }
 
+                                    if (cmd.CountArgs == model.Args.Length)
+                                    {
+                                        cmd.Excecute?.Invoke(model, e);
+                                    }
+                                    else
+                                    {
+                                        cmd.Error?.Invoke(model, e);
+                                    }
+                                }
                             }
                         }
-
-
                     }
                 }
                 else
@@ -216,15 +250,18 @@ namespace RemoteControlPCBot
 
                 }
             }
-
         }
 
         private void MainForm_Deactivate(object sender, EventArgs e)
         {
             if (this.WindowState  == FormWindowState.Minimized)
             {
-                this.ShowInTaskbar = false;
-                this.Лог.Visible = true;
+                this.Invoke(new Action(() =>
+               {
+                   this.ShowInTaskbar = false;
+                   this.Log_Icon.Visible = true;
+               }));
+
             }
         }
 
@@ -232,12 +269,16 @@ namespace RemoteControlPCBot
         {
             if (this.WindowState == FormWindowState.Minimized)
             {
-                this.ShowInTaskbar = true;
-                this.Лог.Visible = false;
-                this.WindowState = FormWindowState.Normal;
+                this.Invoke(new Action( () => 
+                {
+                    this.ShowInTaskbar = true;
+                    this.Log_Icon.Visible = false;
+                    this.WindowState = FormWindowState.Normal;
+                }
+                ));
+
             }
         }
-
 
         private void ScreenShot()
         {
@@ -252,22 +293,15 @@ namespace RemoteControlPCBot
 
         }
 
-
-
-
-
-
-
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             botClient.SendTextMessageAsync(AdminId, "Бот остановлен!");
-
-
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             botClient.SendTextMessageAsync(AdminId, "Бот остановлен!");
         }
+
     }
 }
